@@ -4,21 +4,29 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Source code is available in the workspace'
+                checkout scm
+                echo 'Source code checked out into the workspace'
+            }
+        }
+
+        stage('Validate and Test') {
+            steps {
+                echo 'Checking Python syntax, installing dependencies, and running tests'
+                sh '''
+                    set -eu
+                    python3 -m py_compile app.py test_app.py
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    python -m pip install -r requirements.txt
+                    python -m unittest discover -v
+                '''
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the Flask application with Docker'
+                echo 'Building the Flask application Docker image'
                 sh 'docker build -t devsecops-flask-app .'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Checking application files'
-                sh 'python3 -m py_compile app.py'
             }
         }
     }
